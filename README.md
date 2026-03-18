@@ -1,58 +1,68 @@
-# DeepAnnotate Prototype
+# DeepAnnotate
 
-DeepAnnotate is an end-to-end data collection system designed for AI training workflows. This prototype demonstrates a complete flow where an administrator creates tasks via a web dashboard, and mobile users fulfill those tasks by capturing and uploading media.
+DeepAnnotate is a full-stack, unified mobile application prototype designed for efficiently collecting diverse data types (audio, images, and video) from distributed users. It features an integrated Admin Dashboard and User Interface, completely removing the need for a separate website.
 
-## Project Structure
+## Core Features
 
-The repository is organized into three main components:
-
-- **backend**: Node.js and Express server that handles task management and submission logging.
-- **admin-dashboard**: React application built with Vite for task creation and real-time monitoring of submissions.
-- **mobile_app**: Flutter application for mobile users to browse tasks and upload media.
+*   **Unified Access**: A single Flutter app houses both the Admin Dashboard and the Data Collector (User) interfaces, managed via a simplistic local routing guard.
+*   **Real-Time Live Feed**: The Admin Dashboard receives instant updates via WebSockets (`Socket.io`) when a user uploads a new file, providing an uninterrupted live feed of submissions.
+*   **AWS S3 Storage**: All media submissions are uploaded directly from the mobile app to an AWS S3 bucket using pre-signed HTTP PUT URLs, keeping cloud credentials securely isolated on the backend.
+*   **Theme Management**: A global, state-managed dark and light mode toggle responsive across all screens.
+*   **Offline Experience**: Users local completion lists are tracked to prevent duplicate submissions and distinguish between "Available" and "Completed" tasks.
 
 ## Technology Stack
 
-### Mobile Application
-- **Flutter**: Used for high-performance, natively compiled mobile applications for iOS and Android from a single codebase.
-- **Supabase Storage**: Integrated for scalable, cloud-based media storage without upfront billing requirements.
-- **Shared Preferences**: Used for local state persistence to track completed tasks on the device.
+The project transitioned from Firebase to an industry-standard, scalable architecture:
 
-### Backend API
-- **Node.js & Express**: Provides a lightweight and modular REST API layer.
-- **Firebase Admin SDK**: Securely interacts with Firestore for real-time metadata storage.
-- **Dotenv**: Manages environment variables and credentials securely.
+*   **Frontend**: Flutter (Dart)
+*   **Backend Server**: Node.js with Express.js
+*   **Real-time Communication**: Socket.io
+*   **Database**: PostgreSQL
+*   **Cloud Storage**: AWS S3 (via `@aws-sdk/client-s3`)
 
-### Admin Dashboard
-- **React**: Modern component-based UI for the administrative interface.
-- **Firebase Web SDK**: Utilizes the onSnapshot listener for real-time UI updates when new submissions arrive.
-- **Lucide React**: Provides consistent iconography.
-- **Vanilla CSS**: Custom styling with CSS Variables for theme consistency and Dark Mode support.
+## Project Structure
+```text
+DeepAnnotate/
+├── backend/                  # Node.js Express server
+│   ├── index.js              # Main server file (API & WebSockets)
+│   ├── package.json          # Backend dependencies
+│   └── .env                  # Environment variables (AWS, Postgres)
+├── mobile_app/               # Flutter native application
+│   ├── lib/
+│   │   ├── main.dart         # Entry point & ThemeNotifier
+│   │   ├── constants.dart    # Backend IP/URL configuration
+│   │   ├── screens/          # Login, Admin Dashboard, User Task Lists
+│   │   └── services/         # API Service for HTTP and REST calls
+│   ├── pubspec.yaml          # Flutter dependencies
+│   └── ...
+└── README.md
+```
 
-## Getting Started
+## Setup Instructions
 
-### 1. Backend Setup
-1. Navigate to the `backend` directory.
-2. Install dependencies: `npm install`.
-3. Add your `serviceAccountKey.json` from Firebase.
-4. Start the server: `node index.js`.
+### 1. Database Initialization
+1.  Ensure you have a running PostgreSQL database (e.g., Supabase Postgres).
+2.  Provide the `DATABASE_URL` in the `backend/.env` file.
 
-### 2. Admin Dashboard Setup
-1. Navigate to the `admin-dashboard` directory.
-2. Install dependencies: `npm install`.
-3. Start the development server: `npm run dev`.
+### 2. AWS S3 Configuration
+1.  Create an IAM user with `AmazonS3FullAccess`.
+2.  Provide the `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and `AWS_S3_BUCKET` in the `backend/.env` file.
 
-### 3. Mobile App Setup
-1. Ensure you have the Flutter SDK installed.
-2. Navigate to the `mobile_app` directory.
-3. Install dependencies: `flutter pub get`.
-4. Run the app: `flutter run`.
+### 3. Run Backend Server
+```bash
+cd backend
+npm install
+node index.js
+```
+*Note: To automatically create the SQL tables for the first time, visit `http://localhost:3000/init-db` in your browser.*
 
-## Infrastructure Configuration
+### 4. Run Mobile App
+Open `mobile_app/lib/constants.dart` and ensure `backendUrl` points to your active server IP (e.g., `http://10.0.2.2:3000` for Android emulators).
+```bash
+cd mobile_app
+flutter pub get
+flutter run
+```
 
-### Firestore (Database)
-The project uses two primary collections:
-- **tasks**: Stores task titles, descriptions, and timestamps.
-- **submissions**: Stores references to task IDs and the public URLs of uploaded media.
-
-### Supabase (Storage)
-Media files are stored in a public bucket named `submissions`. Ensure that the storage policies are configured to allow anonymous uploads for testing purposes.
+* **Admin Access**: Login with ID: `admin`, Password: `admin`
+* **User Access**: Login with any other ID and password.
